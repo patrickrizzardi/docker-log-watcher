@@ -29,6 +29,10 @@ print_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
+print_section() {
+    echo -e "${CYAN}📊 $1${NC}"
+}
+
 # Function to check if a process is already running
 is_monitoring() {
     local pattern="$1"
@@ -123,7 +127,23 @@ start_log_monitoring() {
     
     if [ -f "$log_file" ] && ! is_monitoring "tail -[fF].*$log_file"; then
         print_info "Starting log stream for: $service_name ($prefix)"
-        tail -F "$log_file" 2>/dev/null | sed "s/^/[$prefix:$service_name] /" &
+        
+        # Choose color based on prefix
+        case "$prefix" in
+            "SYSTEM")
+                color="$GREEN"
+                ;;
+            "FILE")
+                color="$PURPLE"
+                ;;
+            *)
+                color="$WHITE"
+                ;;
+        esac
+        
+        tail -F "$log_file" 2>/dev/null | while IFS= read -r line; do
+            echo -e "${color}[$prefix:$service_name]${NC} $line"
+        done &
         return 0
     else
         return 1
@@ -142,7 +162,23 @@ restart_log_monitoring() {
     # Start fresh
     if [ -f "$log_file" ]; then
         print_info "Restarting log stream for: $service_name (rotation detected)"
-        tail -F "$log_file" 2>/dev/null | sed "s/^/[$prefix:$service_name] /" &
+        
+        # Choose color based on prefix
+        case "$prefix" in
+            "SYSTEM")
+                color="$GREEN"
+                ;;
+            "FILE")
+                color="$PURPLE"
+                ;;
+            *)
+                color="$WHITE"
+                ;;
+        esac
+        
+        tail -F "$log_file" 2>/dev/null | while IFS= read -r line; do
+            echo -e "${color}[$prefix:$service_name]${NC} $line"
+        done &
         return 0
     else
         return 1
@@ -176,6 +212,3 @@ cleanup() {
     jobs -p | xargs -r kill 2>/dev/null || true
     exit 0
 }
-
-# Set up signal handlers
-trap cleanup SIGINT SIGTERM
