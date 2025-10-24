@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  log-watcher:
+    build: .
+    container_name: docker-log-watcher
+    tty: true
+    stdin_open: true
+    environment:
+      # Monitoring intervals (in seconds)
+      DOCKER_CHECK_INTERVAL: ${DOCKER_CHECK_INTERVAL:-0.1}
+      SYSTEM_CHECK_INTERVAL: ${SYSTEM_CHECK_INTERVAL:-0.1}
+
+      # Log configuration
+      LOG_TAIL_LINES: ${LOG_TAIL_LINES:-50}
+
+      # Enable/disable monitoring types
+      ENABLE_DOCKER_MONITORING: ${ENABLE_DOCKER_MONITORING:-true}
+      ENABLE_SYSTEM_MONITORING: ${ENABLE_SYSTEM_MONITORING:-true}
+      ENABLE_FILE_MONITORING: ${ENABLE_FILE_MONITORING:-true}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /var/log:/var/log:ro
+      - /opt/logs:/opt/logs:ro
+      - /app/logs:/app/logs:ro
+    restart: unless-stopped
